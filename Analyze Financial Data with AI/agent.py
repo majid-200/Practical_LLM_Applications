@@ -791,3 +791,211 @@ def create_agent():
     #   graph.invoke(initial_state, context=...)
 
     return graph.compile()
+
+# USAGE EXAMPLES
+
+"""
+How to use this agent system:
+
+# ───────────────────────────────────────────────────────────────────────────
+# Example 1: Basic Usage
+# ───────────────────────────────────────────────────────────────────────────
+from agent import create_agent, AgentState, ContextSchema
+from langchain_ollama import ChatOllama
+from config import Config
+
+# Initialize the model
+model = ChatOllama(model=Config.MODEL.name, temperature=Config.MODEL.temperature)
+
+# Create the agent graph
+agent_graph = create_agent()
+
+# Prepare initial state
+initial_state = AgentState(
+    messages=[HumanMessage(content="Analyze NVIDIA stock (NVDA)")],
+    iteration_count=0,
+    next_agent=None
+)
+
+# Prepare context
+context = ContextSchema(model=model)
+
+# Run the agent system
+result = agent_graph.invoke(initial_state, context=context)
+
+# Get final answer
+final_answer = result["messages"][-1].content
+print(final_answer)
+
+# ───────────────────────────────────────────────────────────────────────────
+# Example 2: Multi-Turn Conversation
+# ───────────────────────────────────────────────────────────────────────────
+
+# First query
+state1 = AgentState(
+    messages=[HumanMessage(content="What's NVDA's recent price trend?")],
+    iteration_count=0
+)
+result1 = agent_graph.invoke(state1, context=context)
+
+# Follow-up query (uses conversation history)
+state2 = AgentState(
+    messages=result1["messages"] + [HumanMessage(content="What are their main risks?")],
+    iteration_count=0
+)
+result2 = agent_graph.invoke(state2, context=context)
+
+# ───────────────────────────────────────────────────────────────────────────
+# Example 3: Understanding the Execution Flow
+# ───────────────────────────────────────────────────────────────────────────
+
+Visual representation of what happens internally:
+
+Query: "Analyze NVDA stock"
+
+┌─────────────────────────────────────────────────────────────────┐
+│ Iteration 1                                                     │
+│ ───────────                                                     │
+│ Supervisor: "Need stock prices. Delegate to Price Analyst."     │
+│ Router: Routes to PRICE_ANALYST                                 │
+│ Price Analyst:                                                  │
+│   - Calls get_historical_stock_price("NVDA")                    │
+│   - Gets XML with weekly prices                                 │
+│   - Summarizes: "NVDA up 35% in 90 days, $480→$650"             │
+│ Router: Routes to SUPERVISOR                                    │
+└─────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────┐
+│ Iteration 2                                                     │
+│ ───────────                                                     │
+│ Supervisor: "Need SEC filings. Delegate to Filing Analyst."     │
+│ Router: Routes to FILING_ANALYST                                │
+│ Filing Analyst:                                                 │
+│   - Calls fetch_sec_filing_sections("NVDA", [MDA, RISK])        │
+│   - Gets MD&A and Risk Factors from 10-Q                        │
+│   - Summarizes: "Key risks: supply chain, competition"          │
+│ Router: Routes to SUPERVISOR                                    │
+└─────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────┐
+│ Iteration 3                                                     │
+│ ───────────                                                     │
+│ Supervisor: "Have all info. Delegate to Synthesizer."           │
+│ Router: Routes to SYNTHESIZER                                   │
+│ Synthesizer:                                                    │
+│   - Reviews all gathered data                                   │
+│   - Creates formatted final answer:                             │
+│                                                                 │
+│     **Overview**                                                │
+│     NVIDIA (NVDA) is a leading AI chip maker...                 │
+│                                                                 │
+│     **Price Action**                                            │
+│     Strong uptrend, +35% in 90 days...                          │
+│                                                                 │
+│     **Recommendation**                                          │
+│     BUY - Strong fundamentals, positive momentum                │
+│                                                                 │
+│ Router: Routes to END                                           │
+└─────────────────────────────────────────────────────────────────┘
+
+Final output delivered to user!
+
+# ───────────────────────────────────────────────────────────────────────────
+# Example 4: Error Handling and Edge Cases
+# ───────────────────────────────────────────────────────────────────────────
+
+# Case 1: Invalid ticker
+state = AgentState(
+    messages=[HumanMessage(content="Analyze XYZ123 stock")],
+    iteration_count=0
+)
+result = agent_graph.invoke(state, context=context)
+# Tools will return error messages, agents will handle gracefully
+
+# Case 2: Max iterations reached
+# If supervisor keeps delegating without synthesizing, router will
+# stop execution at Config.MAX_ITERATIONS to prevent infinite loop
+
+# Case 3: Follow-up without context
+state = AgentState(
+    messages=[HumanMessage(content="What about their competitors?")],
+    iteration_count=0
+)
+# Supervisor will ask for clarification or make best effort with context
+"""
+
+# KEY DESIGN PATTERNS EXPLAINED
+
+"""
+1. SUPERVISOR-WORKER PATTERN
+   ─────────────────────────
+   Why: Separates coordination (supervisor) from execution (workers)
+   Benefit: Easy to add new workers without changing core logic
+   
+   Alternative: Could have single agent do everything, but that's less modular
+
+2. STRUCTURED OUTPUT (Pydantic)
+   ────────────────────────────
+   Why: Forces LLM to return parseable JSON instead of free text
+   Benefit: No regex parsing, type safety, predictable routing
+   
+   Example: SupervisorPlan ensures next_agent is always valid
+
+3. FACTORY PATTERN (create_worker_node)
+   ────────────────────────────────────
+   Why: Avoid code duplication for similar agents
+   Benefit: Workers have identical logic, only tools differ
+   
+   Without factory: Would need separate price_analyst_node and 
+                    filing_analyst_node functions with duplicated code
+
+4. STATE FLOW (add_messages annotation)
+   ──────────────────────────────────────
+   Why: Messages accumulate rather than replace
+   Benefit: Full conversation history preserved automatically
+   
+   Technical: Annotated[list, add_messages] tells LangGraph to append
+
+5. GRAPH-BASED ROUTING
+   ────────────────────
+   Why: Explicit visual representation of agent workflow
+   Benefit: Easy to understand, debug, and modify agent interactions
+   
+   Alternative: Nested if/else statements (much harder to understand)
+
+6. CONTEXT SEPARATION
+   ──────────────────
+   Why: AgentState vs ContextSchema separation
+   Benefit: State changes during execution, context stays constant
+   
+   State: messages, iteration_count (dynamic)
+   Context: model, config (static)
+"""
+
+# DEBUGGING TIPS
+
+"""
+1. Trace message flow:
+   for msg in result["messages"]:
+       print(f"{type(msg).__name__}: {msg.content[:100]}...")
+
+2. Check iteration count:
+   print(f"Iterations: {result['iteration_count']}")
+
+3. Visualize the graph:
+   from langgraph.graph import Graph
+   graph.get_graph().draw_mermaid()  # Generates diagram
+
+4. Add logging to nodes:
+   def supervisor_node(state, runtime):
+       print(f"[SUPERVISOR] Query: {state.messages[-1].content}")
+       # ... rest of code
+
+5. Test individual components:
+   # Test worker node separately
+   test_state = AgentState(
+       messages=[HumanMessage(content="Get NVDA prices", name="SupervisorInstruction")],
+       iteration_count=0
+   )
+   result = price_agent_node(test_state, runtime)
+"""
