@@ -58,11 +58,11 @@ Create a delegation plan to answer the user's query.
 <instructions>
 - Price Analyst: Retrieves historical stock price data
 - Filing Analyst: Retrieves SEC filing information (10-K, 10-Q, risk factors, MD&A)
-- Synthessizer: Create final answer from gathered information
+- Synthesizer: Create final answer from gathered information
 
 Decision logic:
 1. If more data is needed -> Delegate a specific question to Price Analyst or Filing Analyst
-2. If you have suffecient information -> Delegate to Synthesizer with: "Provide a concise final answer."
+2. If you have sufficient information -> Delegate to Synthesizer with: "Provide a concise final answer."
 
 For follow-up questions: Use context from earlier in the conversation and possibly call other agents to get more information.
 When calling agents, always ask them to provide the analysis for your query.
@@ -128,7 +128,7 @@ Provide a concise, data-driven answer to the user's query.
 <instructions>
 LENGTH LIMITS (strictly enforce):
 - Initial company analysis: 5-8 sentences maximum
-- Follow-up quesions: 2-4 sentences maximum
+- Follow-up questions: 2-4 sentences maximum
 - Data requests: Present facts concisely
 
 Every word must add value. No fluff, no hedging, no unnecessary qualifiers.
@@ -153,7 +153,7 @@ Reference prior context only if relevant
 
 TYPE 3 - Data Requests:
 Present key numbers/facts clearly
-Add brief context if esential
+Add brief context if essential
 </output_structure>
 
 <formatting>
