@@ -19,18 +19,18 @@ This project moves beyond simple "input/output" scripts to teach system design p
 
 ```mermaid
 graph TD
-    User[User (Terminal)] <-->|Interacts| Client[CLI App (app.py)]
+    User[User Terminal] <-->|Interacts| Client[CLI App app.py]
     
-    subgraph "Frontend"
-        Client <-->|Display| UI[UI Manager (Rich)]
+    subgraph Frontend
+        Client <-->|Display| UI[UI Manager Rich]
     end
     
-    Client <-->|HTTP/SSE| Server[API Server (server.py)]
+    Client <-->|HTTP/SSE| Server[API Server server.py]
     
-    subgraph "Backend"
+    subgraph Backend
         Server <-->|Retrieves| DB[(SQLite Database)]
         Server <-->|Loads| Personas[Persona Files]
-        Server <-->|Invokes| LLM[Ollama (Local AI)]
+        Server <-->|Invokes| LLM[Ollama Local AI]
     end
 ```
 
