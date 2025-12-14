@@ -11,7 +11,9 @@ Each project is contained within its own folder and includes a dedicated README 
 | Project                                                     | Description                                                                                                   | Key Concepts Covered                        |
 | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
 | **LangChain Conceptual Tutorials** | A series of notebooks adapted from official LangChain documentation, progressing from basics to advanced agents. | RAG, Agents, Chatbots, Structured Output, Vector Stores |
+| **Analyze Financial Data with AI** | **"FinVault"**: A Streamlit application featuring a hierarchical multi-agent team. A "Supervisor" agent delegates tasks to specialized analysts to research stocks and SEC filings. | Multi-Agent Systems, Supervisor-Worker Pattern, Streamlit UI, Tool Calling, Financial Analysis |
 | *(More projects will be added here...)*                     |                                                                                                               |                                             |
+
 
 ---
 
@@ -22,6 +24,7 @@ This repository primarily uses the following technologies:
 - **[LangChain]:** The core framework for orchestrating LLM workflows.
 - **[Ollama]:** For running and managing local LLMs and embedding models.
 - **[LangGraph]:** For building stateful, multi-actor applications.
+- **[Streamlit]:** For building interactive web interfaces for the AI applications.
 - **[Pydantic]:** For defining data schemas to enable reliable, structured output.
 
 ## 🔧 General Setup
