@@ -13,9 +13,8 @@ Each project is contained within its own folder and includes a dedicated README 
 | **LangChain Conceptual Tutorials** | A series of notebooks adapted from official LangChain documentation, progressing from basics to advanced agents. | RAG, Agents, Chatbots, Structured Output, Vector Stores |
 | **Analyze Financial Data with AI** | **"FinVault"**: A Streamlit application featuring a hierarchical multi-agent team. A "Supervisor" agent delegates tasks to specialized analysts to research stocks and SEC filings. | Multi-Agent Systems, Supervisor-Worker Pattern, Streamlit UI, Tool Calling, Financial Analysis |
 | **Chatbot Memory with Ollama & SQLite** | **"NeuroMind"**: A full-stack CLI chatbot with persistent memory. Features a FastAPI backend and a beautiful terminal UI. Supports multiple "Personas" and conversation threads. | Client-Server Architecture, SQLite Persistence, FastAPI, Server-Sent Events (SSE), Rich Terminal UI |
+| **Long Running Coding Agents** | **Autonomous Software Engineer**: An agent that creates a real workspace, plans features, writes Python code, runs its own tests (pytest), fixes errors, and commits to Git. | Autonomous Agents, Self-Correction Loops, Tool Use (Shell/File System), Plan & Execute |
 | *(More projects will be added here...)*                     |                                                                                                               |                                             |
-
-
 ---
 
 ## 🛠️ Core Technologies
