@@ -1,0 +1,7 @@
+{
+    "dependencies": ["."],
+    "graphs": {
+        "agent": "./Personal_Chef.py:agent"
+    },
+    "env": "../.env"
+  }
