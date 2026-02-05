@@ -253,6 +253,6 @@ def process_document(pdf_path: str):
 if __name__ == "__main__":
     # file_name = Path("sp500-analysis.pdf")
     # file_name = Path("nvidia-q3-2025-press-release.pdf")
-    file_name = Path("sp-500-brochure.pdf")
+    file_name = Path("NVDA_Q3_FY2026_Earnings_Release.pdf")
     md_content = process_document(f"./data/{file_name}")
     Path(f"output/{file_name.stem}.md").write_text(md_content, encoding='utf-8')
