@@ -1,4 +1,4 @@
-## NVIDIA Announces Financial Results for Third Quarter Fiscal 2026
+# NVIDIA Announces Financial Results for Third Quarter Fiscal 2026
 
 - Record revenue of $57 . 0 billion , up 22% from Q2 and up 62% from a year ago
 - Record Data Center revenue of $51 . 2 billion , up 25% from Q2 and up 66% from a year ago

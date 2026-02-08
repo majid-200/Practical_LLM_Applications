@@ -901,7 +901,7 @@ def display_chunk_table(chunks: list[Chunk]) -> None:
 # │ 126% increase compared to the same period last year. The        │
 # │ growth was primarily driven by unprecedented demand for AI      │
 # │ infrastructure and accelerated computing solutions.             │
-# │                                                                  │
+# │                                                                 │
 # │ The Data Center segment led the growth with revenue of          │
 # │ $47.5 billion, up 217% year-over-year...                        │
 # └─────────────────────────────────────────────────────────────────┘
@@ -958,12 +958,12 @@ def display_chunk_details(chunks: list[Chunk], limit: int = 3) -> None:
 # ├─────────────────────────────────────────────────────────────────┤
 # │ Context:                                                        │
 # │ NVIDIA's Data Center segment experienced unprecedented growth   │
-# │ in Q3 FY2026, driven by strong demand for AI infrastructure    │
+# │ in Q3 FY2026, driven by strong demand for AI infrastructure     │
 # │ and accelerated computing solutions. This represents the        │
 # │ segment's strongest year-over-year performance.                 │
-# │                                                                  │
+# │                                                                 │
 # │ Content:                                                        │
-# │ Revenue increased by 217% year-over-year, reaching $47.5       │
+# │ Revenue increased by 217% year-over-year, reaching $47.5        │
 # │ billion. The growth was fueled by hyperscale customers          │
 # │ expanding their AI training capabilities...                     │
 # └─────────────────────────────────────────────────────────────────┘
@@ -1116,26 +1116,163 @@ def display_cost_analysis(
 
 
 
+# ============================================================================
+# SAVE FUNCTION: EXPORT CHUNKS TO JSON
+# ============================================================================
+# Serializes chunks to a JSON file for storage or further processing.
+#
+# JSON FORMAT EXAMPLE:
+# [
+#   {
+#     "content": "NVIDIA reported record revenue...",
+#     "metadata": {
+#       "title": "Q3 Report",
+#       "section": "Revenue",
+#       "context": "NVIDIA's Data Center segment..."
+#     },
+#     "vector_text": "NVIDIA's Data Center segment...\n\nNVIDIA reported..."
+#   },
+#   {
+#     "content": "Operating expenses increased...",
+#     "metadata": {...},
+#     "vector_text": "..."
+#   }
+# ]
+#
+# USE CASES FOR THE JSON FILE:
+# 1. Vector Database Ingestion:
+#    - Load JSON → Create embeddings from vector_text → Store in Pinecone/Weaviate
+# 2. Caching:
+#    - Save enriched chunks to avoid re-running expensive LLM calls
+# 3. Analysis:
+#    - Load in Jupyter notebook to analyze chunk distribution
+# 4. Pipeline Integration:
+#    - Pass to next stage in data processing workflow
+# ============================================================================
+
 def save_chunks_to_json(chunks: list[Chunk], output_path: Path) -> None:
-    """Save chunks to a JSON file"""
+    """
+    Save chunks to a JSON file with proper encoding.
+    
+    Parameters:
+        chunks: List of Chunk objects to serialize
+        output_path: Path object specifying where to save the file
+    
+    Technical details:
+    - Uses asdict() to convert dataclass → dictionary
+    - Handles Unicode properly (ensure_ascii=False)
+    - Pretty-prints with 2-space indentation (human-readable)
+    """
+    
+    # ────────────────────────────────────────────────────────────────────
+    # STEP 1: CONVERT CHUNKS TO DICTIONARIES
+    # ────────────────────────────────────────────────────────────────────
+    # asdict() is a dataclass utility that converts:
+    # 
+    # Chunk(
+    #     content="text",
+    #     metadata={"title": "Report"},
+    #     vector_text="context\n\ntext"
+    # )
+    # 
+    # Into:
+    # 
+    # {
+    #     "content": "text",
+    #     "metadata": {"title": "Report"},
+    #     "vector_text": "context\n\ntext"
+    # }
+    #
+    # List comprehension: [asdict(chunk) for chunk in chunks]
+    # Creates a new list with dictionary version of each chunk
     chunks_data = [asdict(chunk) for chunk in chunks]
     
+    # ────────────────────────────────────────────────────────────────────
+    # STEP 2: WRITE TO FILE
+    # ────────────────────────────────────────────────────────────────────
+    # Context manager (with statement) automatically closes file
+    # Even if an error occurs, the file will be properly closed
     with open(output_path, "w", encoding="utf-8") as f:
-        json.dump(chunks_data, f, indent=2, ensure_ascii=False)
+        json.dump(
+            chunks_data,           # Data to serialize
+            f,                     # File object to write to
+            indent=2,              # Pretty-print with 2-space indentation
+            ensure_ascii=False     # Keep Unicode chars (é, 中, etc.) as-is
+        )
+        # File automatically closes here when exiting 'with' block
         
+    # Print success message with checkmark emoji
+    # [green]✓[/green] renders as a green checkmark
     console.print(f"[green]✓[/green] Saved {len(chunks)} chunks to {output_path}")
 
-# Main execution
+
+# ============================================================================
+# MAIN EXECUTION BLOCK
+# ============================================================================
+# This is the demo script that ties everything together.
+#
+# EXECUTION FLOW:
+# ┌─────────────────────────────────────────────────────────────────────┐
+# │ 1. Setup         │ Create data directory, load sample document      │
+# ├─────────────────────────────────────────────────────────────────────┤
+# │ 2. Demo 1        │ Basic chunking (header-aware, no LLM)            │
+# │                  │ → Show table overview                            │
+# ├─────────────────────────────────────────────────────────────────────┤
+# │ 3. Demo 2        │ Detailed view (first 3 chunks, full content)     │
+# ├─────────────────────────────────────────────────────────────────────┤
+# │ 4. Demo 3        │ LLM enrichment (add context to each chunk)       │
+# │                  │ → Show enriched chunks                           │
+# │                  │ → Analyze token costs                            │
+# │                  │ → Save to JSON                                   │
+# └─────────────────────────────────────────────────────────────────────┘
+#
+# WHY THE if __name__ == "__main__": PATTERN?
+# 
+# This ensures code only runs when script is executed directly:
+# ✓ python chunking_demo.py          → Runs the demo
+# ✗ import chunking_demo             → Doesn't run (just imports functions)
+# ✗ from chunking_demo import Chunk  → Doesn't run (just imports Chunk)
+#
+# This is a Python best practice for making modules reusable
+# ============================================================================
+
 if __name__ == "__main__":
+    # ────────────────────────────────────────────────────────────────────
+    # PRINT HEADER
+    # ────────────────────────────────────────────────────────────────────
+    # \n at start = blank line for spacing
+    # [bold]...[/bold] = Rich markup for bold text
     console.print("\n[bold]CHUNKING DEMO: Markdown Document Chunking[/bold]\n")
 
-    # Ensure data directory exists
+    # ────────────────────────────────────────────────────────────────────
+    # ENSURE DATA DIRECTORY EXISTS
+    # ────────────────────────────────────────────────────────────────────
+    # mkdir() creates the directory
+    # exist_ok=True → Don't error if directory already exists
+    # 
+    # Without exist_ok=True:
+    # - First run: Creates directory ✓
+    # - Second run: Error! Directory exists ✗
+    # 
+    # With exist_ok=True:
+    # - First run: Creates directory ✓
+    # - Second run: Does nothing (no error) ✓
     DATA_DIR.mkdir(exist_ok=True)
     
-    # Create a sample markdown file if it doesn't exist
+    # ────────────────────────────────────────────────────────────────────
+    # CREATE SAMPLE FILE IF MISSING
+    # ────────────────────────────────────────────────────────────────────
+    # This is helpful for first-time users who don't have test data
     sample_md_path = DATA_DIR / "sample.md"
+    
+    # Check if file exists
     if not sample_md_path.exists():
-        console.print("[yellow]Sample file not found. Creating a demo markdown file...[/yellow]\n")
+        console.print(
+            "[yellow]Sample file not found. Creating a demo markdown file...[/yellow]\n"
+        )
+        
+        # Sample financial report (NVIDIA-style)
+        # Uses markdown formatting: #, ##, ###, tables, etc.
         sample_content = """# NVIDIA Corporation Financial Report
 
 ## Executive Summary
@@ -1170,38 +1307,147 @@ NVIDIA continues to dominate the discrete GPU market with approximately 80% mark
 
 Management expects continued strong demand for AI computing infrastructure, with data center revenue projected to grow further in fiscal 2025.
 """
-
+        # Write the sample content to file
+        # encoding="utf-8" ensures Unicode compatibility
         sample_md_path.write_text(sample_content, encoding="utf-8")
+        
         console.print(f"[green]✓[/green] Created sample file at {sample_md_path}\n")
 
 
-    markdown_content = (DATA_DIR / "NVDA_Q3_FY2026_Earnings_Release.md").read_text(encoding="utf-8")
+    # ────────────────────────────────────────────────────────────────────
+    # LOAD THE ACTUAL DOCUMENT TO PROCESS
+    # ────────────────────────────────────────────────────────────────────
+    # This assumes you have a real NVIDIA earnings report in markdown format
+    # Filename: NVDA_Q3_FY2026_Earnings_Release.md
+    # 
+    # .read_text() reads entire file into a string
+    # encoding="utf-8" handles special characters properly
+    markdown_content = (DATA_DIR / "NVDA_Q3_FY2026_Earnings_Release.md").read_text(
+        encoding="utf-8"
+    )
+    
+    # Print document stats
+    # len(markdown_content) = total characters
+    # {:,} adds thousands separator (e.g., 45678 → "45,678")
+    # [cyan]...[/cyan] = cyan-colored text
     console.print(f"Loaded document: [cyan]{len(markdown_content):,}[/cyan] characters\n")
 
+    # ════════════════════════════════════════════════════════════════════
+    # DEMO 1: BASIC CHUNKING (NO LLM ENRICHMENT)
+    # ════════════════════════════════════════════════════════════════════
+    # Purpose: Show header-aware chunking with token-based splitting
+    # Speed: Fast (no LLM calls)
+    # Cost: Free
+    # ════════════════════════════════════════════════════════════════════
     console.print("[bold cyan]Demo 1: Basic Chunking (Header-Aware)[/bold cyan]\n")
 
+    # Call the main chunking function WITHOUT enrichment
+    # Uses default parameters:
+    # - max_tokens=1024
+    # - min_tokens=256
+    # - chunk_overlap=100
     basic_chunks = chunk_markdown(markdown_content, enrich_with_llm=False)
+    
     console.print(f"Generated {len(basic_chunks)} chunks\n")
 
+    # Show table overview (all chunks at a glance)
     display_chunk_table(basic_chunks)
+    
+    # Visual separator (80 hyphens)
     console.print("\n" + "-" * 80 + "\n")
     
+    # ════════════════════════════════════════════════════════════════════
+    # DEMO 2: DETAILED CHUNK VIEW
+    # ════════════════════════════════════════════════════════════════════
+    # Purpose: Inspect first 3 chunks in detail
+    # Shows: Full content of each chunk (not just preview)
+    # ════════════════════════════════════════════════════════════════════
     console.print("[bold cyan]Demo 2: Detailed Chunk View[/bold cyan]\n")
 
+    # Display first 3 chunks with full content
     display_chunk_details(basic_chunks, limit=3)
+    
     console.print("\n" + "-" * 80 + "\n")
               
+    # ════════════════════════════════════════════════════════════════════
+    # DEMO 3: LLM-ENRICHED CHUNKING
+    # ════════════════════════════════════════════════════════════════════
+    # Purpose: Add contextual summaries to improve semantic search
+    # Speed: Slow (calls LLM for each chunk)
+    # Cost: Free (local model) or $$ (cloud API)
+    # Quality: Much better for RAG applications
+    # ════════════════════════════════════════════════════════════════════
     console.print("[bold cyan]Demo 3: LLM-Enriched Chunking[/bold cyan]\n")
     console.print(
-    "[yellow]^ This will call the LLM fo each chunk (may take a moment)...[/yellow]\n"
+        "[yellow]^ This will call the LLM for each chunk (may take a moment)...[/yellow]\n"
+        # Typo in original: "fo" should be "for"
     )
 
+    # Call chunking function WITH enrichment
+    # This will make N LLM calls (where N = number of chunks)
+    # For 20 chunks: ~2-5 minutes with Qwen3 8B locally
     enriched_chunks = chunk_markdown(markdown_content, enrich_with_llm=True)
+    
     console.print(f"\nGenerated {len(enriched_chunks)} enriched chunks\n")
 
+    # Show first 3 enriched chunks (context + content)
     display_enriched_chunks(enriched_chunks, limit=3)
-                            
+    
+    # ────────────────────────────────────────────────────────────────────
+    # COST ANALYSIS
+    # ────────────────────────────────────────────────────────────────────
+    # Compare token counts: basic vs enriched
+    # Helps decide if enrichment is worth the cost
     display_cost_analysis(basic_chunks, enriched_chunks)
 
+    # ────────────────────────────────────────────────────────────────────
+    # SAVE TO JSON
+    # ────────────────────────────────────────────────────────────────────
+    # Save enriched chunks for later use
+    # Filename: [original_filename]_enriched_chunks.json
     output_path = DATA_DIR / "NVDA_Q3_FY2026_Earnings_Release_enriched_chunks.json"
-    save_chunks_to_json(enriched_chunks, output_path)      
+    save_chunks_to_json(enriched_chunks, output_path)
+
+
+# ============================================================================
+# END OF SCRIPT
+# ============================================================================
+# 
+# NEXT STEPS AFTER RUNNING THIS DEMO:
+# 
+# 1. VECTOR DATABASE INGESTION:
+#    ```python
+#    import json
+#    from openai import OpenAI
+#    
+#    # Load chunks
+#    with open("data/enriched_chunks.json") as f:
+#        chunks = json.load(f)
+#    
+#    # Create embeddings
+#    client = OpenAI()
+#    for chunk in chunks:
+#        embedding = client.embeddings.create(
+#            input=chunk["vector_text"],
+#            model="text-embedding-3-small"
+#        )
+#        # Store in Pinecone/Weaviate/etc.
+#    ```
+#
+# 2. HYPERPARAMETER TUNING:
+#    - Try different max_tokens (512, 1024, 2048)
+#    - Adjust min_tokens threshold
+#    - Experiment with chunk_overlap
+#    - Test different LLM models
+#
+# 3. EVALUATION:
+#    - Create test queries
+#    - Measure retrieval accuracy (with vs without enrichment)
+#    - Compare against baselines (character-based splitting, etc.)
+#
+# 4. PRODUCTION DEPLOYMENT:
+#    - Add error handling
+#    - Implement retry logic for LLM calls
+#    - Add progress bars for long documents
+#    - Cache enriched chunks to avoid re-processing
+# ============================================================================
